@@ -1,5 +1,5 @@
-{%- if pillar.mongodb is defined %}
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+
 include:
   - mongodb.server
-  - mongodb.cluster
-{%- endif %}

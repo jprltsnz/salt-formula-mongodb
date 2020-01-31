@@ -16,9 +16,20 @@ mongodb_packages:
   - require:
       - mongodb_repository
 
-/etc/mongodb.conf:
+mongodb server user and group present:
+  group.present:
+    - name: mongodb
+  user.present:
+    - name: mongodb
+    - fullname: mongoDB user
+    - shell: /bin/bash
+    - createhome: False
+  - require:
+    - pkg: mongodb_packages
+
+/etc/mongod.conf:
   file.managed:
-  - source: salt://mongodb/files/mongodb.conf
+  - source: salt://mongodb/files/mongod.conf
   - template: jinja
   - require:
     - pkg: mongodb_packages
@@ -31,19 +42,3 @@ mongodb_service:
       - mongodb_packages
   - watch:
     - file: /etc/mongodb.conf
-
-{%- if server.shared_key is defined %}
-/etc/mongodb.key:
-  file.managed:
-  - contents_pillar: mongodb:server:shared_key
-  - mode: 600
-  - user: mongodb
-  - require:
-    - pkg: mongodb_packages
-  - watch_in:
-    - service: mongodb_service
-{%- endif %}
-
-{{ server.lock_dir }}:
-  file.directory:
-    - makedirs: true
