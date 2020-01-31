@@ -1,9 +1,20 @@
 {%- from "mongodb/map.jinja" import server with context %}
 
-{%- if server.get('enabled', False) %}
+mongodb_repository:
+  pkgrepo.managed:
+    - humanname: MongoDB
+    - name: http://repo.mongodb.org/apt/debian {{ grains['oscodename']}}/mongodb-org/{{ server.version }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/mongodb-org-{{ server.version }}.list
+    - gpgcheck: 1
+    - keyid: 9DA31620334BD75D9DCB49F368818C72E52529D4
+    - keyserver: keyserver.ubuntu.com
+
 mongodb_packages:
   pkg.installed:
   - names: {{ server.pkgs }}
+  - require:
+      - mongodb_repository
 
 /etc/mongodb.conf:
   file.managed:
@@ -11,6 +22,15 @@ mongodb_packages:
   - template: jinja
   - require:
     - pkg: mongodb_packages
+
+mongodb_service:
+  service.running:
+  - enable: true
+  - name: {{ server.service }}
+  - require:
+      - mongodb_packages
+  - watch:
+    - file: /etc/mongodb.conf
 
 {%- if server.shared_key is defined %}
 /etc/mongodb.key:
@@ -27,18 +47,3 @@ mongodb_packages:
 {{ server.lock_dir }}:
   file.directory:
     - makedirs: true
-
-mongodb_service:
-  service.running:
-  - name: {{ server.service }}
-  - enable: true
-  {%- if grains.get('noservices') %}
-  - onlyif: /bin/false
-  {%- endif %}
-  - require:
-    - file: {{ server.lock_dir }}
-    - pkg: mongodb_packages
-  - watch:
-    - file: /etc/mongodb.conf
-
-{%- endif %}
