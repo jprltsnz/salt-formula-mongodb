@@ -3,12 +3,10 @@
 mongodb_repository:
   pkgrepo.managed:
     - humanname: MongoDB
-    - name: http://repo.mongodb.org/apt/debian {{ grains['oscodename']}}/mongodb-org/{{ server.version }} main
-    - dist: {{ grains['oscodename'] }}
+    - name: "deb http://repo.mongodb.org/apt/debian {{grains['oscodename']}}/mongodb-org/{{ server.version }} main"
     - file: /etc/apt/sources.list.d/mongodb-org-{{ server.version }}.list
     - gpgcheck: 1
-    - keyid: 9DA31620334BD75D9DCB49F368818C72E52529D4
-    - keyserver: keyserver.ubuntu.com
+    - key_url: https://www.mongodb.org/static/pgp/server-4.2.asc
 
 mongodb_packages:
   pkg.installed:
@@ -19,13 +17,15 @@ mongodb_packages:
 mongodb server user and group present:
   group.present:
     - name: mongodb
+    - require:
+        - pkg: mongodb_packages
   user.present:
     - name: mongodb
     - fullname: mongoDB user
     - shell: /bin/bash
     - createhome: False
-  - require:
-    - pkg: mongodb_packages
+    - require:
+        - pkg: mongodb_packages
 
 /etc/mongod.conf:
   file.managed:
@@ -41,4 +41,4 @@ mongodb_service:
   - require:
       - mongodb_packages
   - watch:
-    - file: /etc/mongodb.conf
+    - file: /etc/mongod.conf
